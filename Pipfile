@@ -1,0 +1,23 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+flake8 = "*"
+
+[packages]
+django = "==2.2.5"
+django-cors-headers = "*"
+exponent-server-sdk = "*"
+requests = "*"
+bs4 = "*"
+firebase-admin = "*"
+djangorestframework = "*"
+asyncio = "*"
+uwsgi = "*"
+grpcio = "*"
+pyjwt = "*"
+
+[requires]
+python_version = "3.7"
