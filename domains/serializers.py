@@ -5,12 +5,14 @@ from bs4 import BeautifulSoup
 import hashlib
 from urllib import parse
 
+user_agent = "Mozilla/5.0 (Linux; U; Android 4.0.3; de-ch; HTC Sensation Build/IML74K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"
+
 
 class DomainSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ("title", "url", "change")
+        fields = ("title", "url", "change", "filterling")
         model = Domain
-        read_only_fields = ("title", "change")
+        read_only_fields = ("title", "change", "filterling")
 
     def make_md5(self, page):
         soup = BeautifulSoup(page, "html.parser")
@@ -28,18 +30,52 @@ class DomainSerializer(serializers.ModelSerializer):
     def append_data(self, url):
         try:
             url = parse.quote(url.encode("utf8"), "/:?&=")
-            request = Request(
-                url,
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36"
-                },
-            )
+            request = Request(url, headers={"User-Agent": user_agent},)
             response = urlopen(request)
             page = response.read()
             return self.get_title(page), self.make_md5(page)
         except Exception as e:
             print("error log DomainSerializer append_data : ", e)
             return "페이지 에러", ""
+
+    def get_filterling_page(self, url, filterling):
+        try:
+            print(url)
+            print(filterling)
+            url = parse.quote(url.encode("utf8"), "/:?&=")
+            request = Request(url, headers={"User-Agent": user_agent},)
+            response = urlopen(request)
+            page = response.read()
+
+            soup = BeautifulSoup(page, "html.parser")
+
+            node_name, class_name = filterling.split(",")
+            body = soup.find(node_name.lower(), {"class": class_name})
+
+            if type(body) != bytes:
+                body = body.encode("utf-8")
+            md5 = hashlib.md5(body).hexdigest()
+            return md5
+
+        except Exception as e:
+            print("error log DomainSerializer get_filterling_page : ", e)
+            return ""
+
+    def update(self, instance, validated_data):
+        filterling = self.context.get("filterling")
+        url = instance.url
+
+        instance.filterling = filterling
+        instance.change = False
+
+        print(filterling)
+        print(url)
+
+        if filterling != "":
+            instance.html = self.get_filterling_page(url, filterling)
+
+        instance.save()
+        return instance
 
     def create(self, validated_data):
         token = self.context.get("token")

@@ -50,6 +50,33 @@ class DomainView(APIView):
 
 
 class Toggle_State(APIView):
+    def post(self, request):
+        try:
+            index = request.data.get("index")
+            filterling = request.data.get("filterling")
+
+            header = request.META.get("HTTP_AUTHORIZATION")
+            if header is not None:
+                token = header
+                decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+                pk = decoded.get("pk")
+                user = User.objects.get(pk=pk)
+                domain = user.domains.all()[index]
+
+                serializer = DomainSerializer(
+                    domain,
+                    data=request.data,
+                    partial=True,
+                    context={"filterling": filterling},
+                )
+                if serializer.is_valid():
+                    domain = serializer.save()
+                    return Response(status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print("error log Toggle_State put : ", e)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
     def put(self, request):
         # print(request.data)
         try:

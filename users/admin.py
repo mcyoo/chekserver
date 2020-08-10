@@ -4,5 +4,5 @@ from . import models
 
 @admin.register(models.User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ("token", "user_os", "user_ver")
+    list_display = ("token", "user_os", "user_ver","created")
     # count_photos.short_description = "photo count"

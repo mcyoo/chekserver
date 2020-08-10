@@ -4,5 +4,5 @@ from . import models
 
 @admin.register(models.Domain)
 class DomainAdmin(admin.ModelAdmin):
-    list_display = ("url", "title", "change")
+    list_display = ("url", "title", "change", "filterling")
 

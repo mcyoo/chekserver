@@ -9,6 +9,8 @@ from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
 from urllib import parse
 
+user_agent = "Mozilla/5.0 (Linux; U; Android 4.0.3; de-ch; HTC Sensation Build/IML74K) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 import django
 
@@ -110,27 +112,46 @@ def make_md5(page):
     return md5
 
 
+def make_md5_filterling(page, filterling):
+    soup = BeautifulSoup(page, "html.parser")
+    try:
+        node_name, class_name = filterling.split(",")
+        body = soup.find(node_name.lower(), {"class": class_name})
+
+        if type(body) != bytes:
+            body = body.encode("utf-8")
+        md5 = hashlib.md5(body).hexdigest()
+    except:
+        md5 = "no element"
+    return md5
+
+
 def get_title(page):
     soup = BeautifulSoup(page, "html.parser")
     title = soup.find("title").text
     return title.strip()
 
 
-async def fetch(url):
+async def fetch(url_filter):
     try:
+        url = url_filter[0]
+        filterling = url_filter[1]
+        print(url)
+        print(filterling)
         url = parse.quote(url.encode("utf8"), "/:?&=")
-        request = Request(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36"
-            },
-        )  # UA가 없으면 403 에러 발생
+        request = Request(url, headers={"User-Agent": user_agent},)  # UA가 없으면 403 에러 발생
         response = await loop.run_in_executor(
             None, urlopen, request
         )  # run_in_executor 사용
         page = await loop.run_in_executor(None, response.read)
         title = await loop.run_in_executor(None, get_title, page)
-        md5 = await loop.run_in_executor(None, make_md5, page)
+        if filterling == "" or filterling is None:
+            md5 = await loop.run_in_executor(None, make_md5, page)
+        else:
+            md5 = await loop.run_in_executor(
+                None, make_md5_filterling, page, filterling
+            )
+
     except Exception as e:
         print(
             time.strftime("%c : ", time.localtime(time.time())),
@@ -142,8 +163,10 @@ async def fetch(url):
 
 
 async def main():
-    urls = [domain.url for domain in getData_DB]
-    futures = [asyncio.ensure_future(fetch(url)) for url in urls]
+    url_filter_list = [(domain.url, domain.filterling) for domain in getData_DB]
+    futures = [
+        asyncio.ensure_future(fetch(url_filter)) for url_filter in url_filter_list
+    ]
     # 태스크(퓨처) 객체를 리스트로 만듦
     result = await asyncio.gather(*futures)  # 결과를 한꺼번에 가져옴
     return result
