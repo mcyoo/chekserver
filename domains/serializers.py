@@ -40,8 +40,6 @@ class DomainSerializer(serializers.ModelSerializer):
 
     def get_filterling_page(self, url, filterling):
         try:
-            print(url)
-            print(filterling)
             url = parse.quote(url.encode("utf8"), "/:?&=")
             request = Request(url, headers={"User-Agent": user_agent},)
             response = urlopen(request)
@@ -49,17 +47,26 @@ class DomainSerializer(serializers.ModelSerializer):
 
             soup = BeautifulSoup(page, "html.parser")
 
+            content = soup.find("title").text
+            title = content.strip()
+
             node_name, class_name = filterling.split(",")
             body = soup.find(node_name.lower(), {"class": class_name})
 
+            print(body)
             if type(body) != bytes:
                 body = body.encode("utf-8")
             md5 = hashlib.md5(body).hexdigest()
-            return md5
+            return title, md5
 
         except Exception as e:
             print("error log DomainSerializer get_filterling_page : ", e)
-            return ""
+            return None
+
+    def validate_url(self, value):
+        if value[-1] != "/":
+            value = value + "/"
+        return value
 
     def update(self, instance, validated_data):
         filterling = self.context.get("filterling")
@@ -68,11 +75,19 @@ class DomainSerializer(serializers.ModelSerializer):
         instance.filterling = filterling
         instance.change = False
 
-        print(filterling)
-        print(url)
-
         if filterling != "":
-            instance.html = self.get_filterling_page(url, filterling)
+            print(filterling)
+            title_md5 = self.get_filterling_page(url, filterling)
+            if title_md5 is None:
+                instance.title = "페이지 에러"
+                instance.html = ""
+            else:
+                instance.title = title_md5[0]
+                instance.html = title_md5[1]
+        else:
+            title, md5 = self.append_data(url)
+            instance.title = title
+            instance.html = md5
 
         instance.save()
         return instance

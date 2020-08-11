@@ -114,15 +114,13 @@ def make_md5(page):
 
 def make_md5_filterling(page, filterling):
     soup = BeautifulSoup(page, "html.parser")
-    try:
-        node_name, class_name = filterling.split(",")
-        body = soup.find(node_name.lower(), {"class": class_name})
 
-        if type(body) != bytes:
-            body = body.encode("utf-8")
-        md5 = hashlib.md5(body).hexdigest()
-    except:
-        md5 = "no element"
+    node_name, class_name = filterling.split(",")
+    body = soup.find(node_name.lower(), {"class": class_name})
+
+    if type(body) != bytes:
+        body = body.encode("utf-8")
+    md5 = hashlib.md5(body).hexdigest()
     return md5
 
 
