@@ -11,7 +11,7 @@ class Domain(core_models.TimeStampedModel):
     title = models.CharField(max_length=100, default="", blank=True)
     html = models.CharField(max_length=50, default="", blank=True)
     change = models.BooleanField(default=False)
-    filterling = models.CharField(max_length=200, default="", blank=True)
+    filterling = models.CharField(max_length=200, default="전체 페이지", blank=True)
 
     def __str__(self):
         return self.url

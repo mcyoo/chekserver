@@ -88,6 +88,7 @@ class DomainSerializer(serializers.ModelSerializer):
             title, md5 = self.append_data(url)
             instance.title = title
             instance.html = md5
+            instance.filterling = "전체 페이지"
 
         instance.save()
         return instance

@@ -143,7 +143,7 @@ async def fetch(url_filter):
         )  # run_in_executor 사용
         page = await loop.run_in_executor(None, response.read)
         title = await loop.run_in_executor(None, get_title, page)
-        if filterling == "" or filterling is None:
+        if filterling == "전체 페이지" or filterling == "" or filterling is None:
             md5 = await loop.run_in_executor(None, make_md5, page)
         else:
             md5 = await loop.run_in_executor(
@@ -156,7 +156,7 @@ async def fetch(url_filter):
             "async def fetch(url): error",
             e,
         )
-        return None
+        return "페이지 에러", ""
     return title, md5
 
 
@@ -175,34 +175,27 @@ async def main():
 def main_checkChange(new_data):
     if getData_DB_Len == len(new_data):
         for i in range(getData_DB_Len):
-            if new_data[i] is None:  # request fail
-                change_DB(i, None)
-            else:
-                domain_title = getData_DB[i].title
-                domain_url = getData_DB[i].url
-                domain_token = getData_DB[i].token.token
-                domain_html = getData_DB[i].html
-                # print(domain_title, domain_url, domain_token, domain_html)
-                if new_data[i][1] != domain_html:
-                    print(
-                        time.strftime("%c : ", time.localtime(time.time())),
-                        domain_title,
-                        "is chage!!",
-                    )
-                    send_to_app(domain_token, domain_title, domain_url)
-                    change_DB(i, new_data[i])
+            domain_title = getData_DB[i].title
+            domain_url = getData_DB[i].url
+            domain_token = getData_DB[i].token.token
+            domain_html = getData_DB[i].html
+            # print(domain_title, domain_url, domain_token, domain_html)
+            if new_data[i][1] != domain_html:
+                print(
+                    time.strftime("%c : ", time.localtime(time.time())),
+                    domain_title,
+                    "is chage!!",
+                )
+                send_to_app(domain_token, domain_title, domain_url)
+                change_DB(i, new_data[i])
 
 
 def change_DB(index, new_data):
     obj_Domain = getData_DB[index]
-    if new_data is not None:
-        obj_Domain.title = new_data[0]
-        obj_Domain.html = new_data[1]
-        obj_Domain.change = True
-    else:
-        obj_Domain.title = "페이지 에러"
-        obj_Domain.html = ""
-        obj_Domain.change = False
+
+    obj_Domain.title = new_data[0]
+    obj_Domain.html = new_data[1]
+    obj_Domain.change = True
     obj_Domain.save()
 
 
